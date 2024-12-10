@@ -47,6 +47,7 @@ Contact
 If you experience any problems or have suggestions please create an issue or a pull request.
 
 Citation
+--------
 Heng Hu, Runtian Gao, Wentao Gao, Bo Gao, Zhongjun Jiang, Murong Zhou, Guohua Wang, Tao Jiang, SVDF: enhancing structural variation detect from long-read sequencing via automatic filtering strategies, Briefings in Bioinformatics, Volume 25, Issue 4, July 2024, bbae336, https://doi.org/10.1093/bib/bbae336
 
 
