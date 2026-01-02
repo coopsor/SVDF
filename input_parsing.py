@@ -14,6 +14,10 @@ def parse_arguments(arguments = sys.argv[1:]):
     parser_bam.add_argument('bam_file',
                              type=str,
                              help='Coordinate-sorted and indexed BAM file with aligned long reads')
+    parser_bam.add_argument('--ref',
+                            type=str,
+                            default='',
+                            help='reference genome file that the long reads were aligned to (FASTA)')
     parser_bam.add_argument('--working_dir',
                              type=os.path.abspath,
                              help='Working and output directory. \
@@ -44,8 +48,9 @@ def parse_arguments(arguments = sys.argv[1:]):
                                   Give a comma-separated list of SV types. The possible SV types are: DEL (deletions), \
                                   INS (novel insertions), INV (inversions), DUP:TANDEM (tandem duplications), \
                                   DUP:INT (interspersed duplications), BND (breakends).')
-    parser_bam.add_argument('--ref',
+    parser_bam.add_argument('--contigs',
                             type=str,
+                            nargs='*',
                             default=['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', 'X',
                                      'Y', 'chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10',
                                      'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19',
@@ -93,6 +98,10 @@ def parse_arguments(arguments = sys.argv[1:]):
     parser_bam.add_argument('bam_file',
                             type=str,
                             help='Coordinate-sorted and indexed BAM file with aligned long reads')
+    parser_bam.add_argument('--ref',
+                            type=str,
+                            default='',
+                            help='reference genome file that the long reads were aligned to (FASTA)')
     parser_bam.add_argument('--working_dir',
                             type=os.path.abspath,
                             help='Working and output directory. \

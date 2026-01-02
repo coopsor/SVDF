@@ -1,5 +1,5 @@
 # SVDF
-SVDF is a long_read_based structural variant caller uses deep learning network.
+SVDF is a long-read-based structural variant caller uses deep learning network.
 
 SVDF is able to detect and genotype DEL/INS/DUP/INV/TRA with fast running speed.
 
@@ -8,16 +8,16 @@ Installation
 ------------
 
     #Install from github (requires Python 3.6.* or newer): installs all dependencies
-    git clone https://github.com/hh22814/SVDF.git
+    git clone https://github.com/coopsor/SVDF
     cd SVDF
 
 Dependencies
 ------------
-- *tensorflow>=2.6.0* 
+- *tensorflow=2.20* 
 - *pandas*
 - *numpy* 
 - *pysam* 
-- *numba*
+- *scikit-learn=1.2.2*
 - *scipy*
 
 Input
@@ -38,8 +38,9 @@ Usage
     #'-s' to filter the low-quality SVs. If you are not sure the parameter, you must specify the sequencing data type(--read_type) and read depth(--depth), SVDF will automatically calculate this value.
     #'-t' to specify the number of threads to use, the default is 16.
     #'--mode' to specify the mode of SVDF, the default is 'general', you can use 'sensitive' mode to call cancer genome SVs or achieve high recalls.
+    #'--ref' to specify the reference genome file that the long reads were aligned to. For resolving reference and alternative allele sequences of INDELs.
     #'--skip_genotype' to skip the genotype step, the default is False.
-    #'--ref' to specify the chromosomes list to call SVs, the default is all chromosomes.
+    #'--contigs' to specify the chromosomes list to call SVs, the default is all chromosomes.
 
 Contact
 -------
@@ -47,7 +48,8 @@ Contact
 If you experience any problems or have suggestions please create an issue or a pull request.
 
 Citation
----------
+--------
+Heng Hu, Runtian Gao, Wentao Gao, Bo Gao, Zhongjun Jiang, Murong Zhou, Guohua Wang, Tao Jiang, SVDF: enhancing structural variation detect from long-read sequencing via automatic filtering strategies, Briefings in Bioinformatics, Volume 25, Issue 4, July 2024, bbae336, https://doi.org/10.1093/bib/bbae336
 
 
 License

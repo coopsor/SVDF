@@ -50,7 +50,7 @@ class SignatureDeletion(Signature):
 class SignatureInsertion(Signature):
     """SV Signature: a region of length end-start has been inserted at contig:start"""
 
-    def __init__(self, contig, start, end, signature, read):
+    def __init__(self, contig, start, end, signature, read, insert_sequence):
         self.contig = contig
         assert end >= start
         # 0-based start of the insertion (base after the insertion)
@@ -61,6 +61,7 @@ class SignatureInsertion(Signature):
         self.read = read
         self.type = "INS"
         self.svlen = self.end - self.start
+        self.alt_sequence = insert_sequence
 
     def get_key(self):
         contig, start, end = self.get_source()
@@ -121,6 +122,7 @@ class SignatureTranslocation(Signature):
             self.dest_direction = direction2
         else:
             print('translocation error')
+        self.contig = contig1
         self.signature = signature
         self.read = read
         self.type = "BND"

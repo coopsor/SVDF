@@ -123,7 +123,7 @@ def main():
         for ref in ref_list:
             if ref.mapped == 0:
                 continue
-            if str(ref[0]) not in options.ref:
+            if str(ref[0]) not in options.contigs:
                 continue
             ref_len = bam.get_reference_length(ref[0])
             logging.info("Processing ref {0}...".format(ref[0]))
@@ -188,7 +188,11 @@ def main():
     logging.info("Finished filtering.. spend time: {0}".format(time.time() - start_time))
 
     logging.info("****************** STEP 4: SVCALL ******************")
-    signature_candidate = sorted(consolidate_clusters_unilocal(signature_clusters),
+    if options.ref:
+        ref_genome = pysam.FastaFile(options.ref)
+    else:
+        ref_genome = None
+    signature_candidate = sorted(consolidate_clusters_unilocal(signature_clusters, options, ref_genome),
                                  key=lambda cluster: (cluster.contig, cluster.start))
     deletion_candidates = [i for i in signature_candidate if i.type == 'DEL']
     insertion_candidates = [i for i in signature_candidate if i.type == 'INS']

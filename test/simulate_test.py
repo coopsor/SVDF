@@ -1,7 +1,6 @@
 import os
 import re
 
-
 def calculate_metrics(input_string):
     pattern = r'Overall: (\d+) ([\d/ ]+)'
     match = re.search(pattern, input_string)
@@ -11,7 +10,6 @@ def calculate_metrics(input_string):
         TP_FN_FP_temp = re.split(r'[ /]+', groups[1].strip())
         TP_FN_FP = TP_FN_FP_temp[:-1]
 
-        # 将每五个数字作为一组，计算 Precision、Recall 和 F1 score
         metrics = []
         tp, fn, fp = 0, 0, 0
         for i in [0, 4]:
@@ -19,7 +17,6 @@ def calculate_metrics(input_string):
             FN = int(TP_FN_FP[i + 5])
             FP = int(TP_FN_FP[i + 10])
 
-            # 计算 Precision、Recall 和 F1 score
             precision = TP / (TP + FP) if TP + FP > 0 else 0
             recall = TP / (TP + FN) if TP + FN > 0 else 0
             f1_score = 2 * (precision * recall) / (precision + recall) if precision + recall > 0 else 0

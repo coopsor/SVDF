@@ -3,7 +3,7 @@ import pandas as pd
 
 def convert_bed(excel_file):
     df = pd.read_excel(excel_file)
-    #提取SV_id，chrom1,pos1,chrom2,pos2,svtype,SV_size or breakpoints distance,SV_type列
+    #extract SV_id，chrom1,pos1,chrom2,pos2,svtype,SV_size or breakpoints distance,SV_type
     df = df[['Chrom1', 'Pos1', 'Chrom2', 'Pos2', 'SV_size or breakpoints distance', 'SV_type']]
     df.loc[df['SV_type'] == 'DEL', 'SV_size or breakpoints distance'] = -df['SV_size or breakpoints distance']
     df.to_csv('tumor_v.bed', sep='\t', header=False, index=False)
@@ -41,7 +41,7 @@ def main(read_type, bam_file, working_file, support):
 
     ground_truth = read_bed('/home/user/download/SURVIVOR-master/Debug/tumor_h.bed')
     result = {}
-    with open("../{0}/{0}.vcf".format(working_file), 'r') as f:
+    with open("/home/user/code/SVDF/tumor_ont/pansv_variants.vcf".format(working_file), 'r') as f:
         for line in f:
             if line.startswith('#'):
                 continue
@@ -65,9 +65,9 @@ def main(read_type, bam_file, working_file, support):
                         if abs(truth_start - svstart) <= 1000 and 0.5 <= min(truth_len, abs(svlen)) / max(
                                 truth_len, abs(svlen)):
                             if svtype in result:
-                                result[svtype].append(truth_id)
+                                result[svtype].append((chr, truth_start, truth_id))
                             else:
-                                result[svtype] = [truth_id]
+                                result[svtype] = [(chr, truth_start, truth_id)]
                             break
             else:
                 matches = re.findall(r'chr(\d+):(\d+)', rec[4])
@@ -94,7 +94,7 @@ if __name__ == '__main__':
         '/home/public_data/sv/long_read/tumor_clr.PBMM2.bam',
         '/home/public_data/sv/long_read/tumor.ont.bam',
     ]
-    working_file_list = ['tumor_clr', 'tumor_ont']
+    working_file_list = ['tumor_clr']
     # working_file_list = ['pbsim_clr_12-24', 'pbsim_ont_12-24']
     support_list = [5, 3]
     read_type_list = ['CLR', 'ONT']
@@ -121,5 +121,4 @@ if __name__ == '__main__':
 
     df.fillna('', inplace=True)
 
-    # 写入CSV文件
-    df.to_csv('output_h.csv', index=False)
+    df.to_csv('/home/huheng/code/PanSV/tumor/output_h.csv', index=False)

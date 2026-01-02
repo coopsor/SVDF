@@ -39,7 +39,13 @@ def analyze_alignment_indel(alignment, bam, query_name, options):
     soft_clipped_length = cigar_fea[0]
     soft_clipped_ratio = soft_clipped_length / alignment.infer_read_length()
     indels_count = cigar_fea[1]
-    total_mismatch = alignment.get_tag('NM') - indels_count if alignment.get_tag('NM') else 0
+    if alignment.has_tag('NM'):
+        nm = alignment.get_tag('NM')
+        total_mismatch = max(nm - indels_count, 0)
+    else:
+        nm = 0
+        total_mismatch = 0
+
     atgc_seq = alignment.query_sequence
     a_freq = atgc_seq.count('A') / len(atgc_seq)
     t_freq = atgc_seq.count('T') / len(atgc_seq)
@@ -54,13 +60,14 @@ def analyze_alignment_indel(alignment, bam, query_name, options):
         if typ == "DEL":
             sv_signatures.append(SignatureDeletion(ref_chr, start, end, "cigar", query_name))
         elif typ == "INS":
-            sv_signatures.append(SignatureInsertion(ref_chr, start, end, "cigar", query_name))
+            insertion_seq = atgc_seq[pos_read:pos_read + length]
+            sv_signatures.append(SignatureInsertion(ref_chr, start, end, "cigar", query_name, insertion_seq))
         data = {'map_quality': int(alignment.mapping_quality),
                 'soft_clipped_ratio': soft_clipped_ratio,
                 'FLAG': alignment.flag,
                 'infer_read_length': alignment.infer_read_length(),
-                'indels_count': indels_count,  # alignment比对信息
-                'bin': alignment.bin,  # cigar信息
+                'indels_count': indels_count,
+                'bin': alignment.bin,
                 'start': start,
                 'end': end,
                 'pos_ref': pos_ref,
@@ -74,7 +81,7 @@ def analyze_alignment_indel(alignment, bam, query_name, options):
                 'E': alignment.reference_end,
                 'soft': soft_clipped_length,
                 # 'query_qualities': sum(alignment.query_qualities) / len(alignment.query_qualities),
-                'NM': alignment.get_tag('NM'),
+                'NM': nm,
                 'total_mismatch': total_mismatch,
                 'a_freq': a_freq,  # 碱基信息
                 't_freq': t_freq,

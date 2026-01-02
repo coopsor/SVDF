@@ -5,13 +5,15 @@ import numpy as np
 
 class Candidate:
 
-    def __init__(self, contig, start, end, sv_types, type,  members, support_fraction=".", genotype="./.", ref_reads=None, alt_reads=None):
+    def __init__(self, contig, start, end, sv_types, type,  members, ref_seq=None, alt_seq=None, support_fraction=".", genotype="./.", ref_reads=None, alt_reads=None):
         self.contig = contig
         self.start = start
         self.end = end
         self.sv_types = sv_types
         self.type = type
         self.members = members
+        self.ref_seq = ref_seq
+        self.alt_seq = alt_seq
         self.score = len(members)
         self.support_fraction = support_fraction
         self.genotype = genotype
@@ -39,8 +41,8 @@ class Candidate:
             chrom=contig,
             pos=start,
             id="PLACEHOLDERFORID",
-            ref="N",
-            alt="<" + self.type + ">",
+            ref="N" if self.ref_seq == None else self.ref_seq,
+            alt="<" + self.type + ">" if self.alt_seq == None else self.alt_seq,
             qual=self.score,
             filter="PASS" if len(filters) == 0 else ";".join(filters),
             info=info_string,
@@ -131,24 +133,51 @@ class CandidateBreakend(Candidate):
                     format="GT:DP:AD",
                     samples="{gt}:{dp}:{ref},{alt}".format(gt=self.genotype, dp=".", ref=".", alt="."))
 
-def consolidate_clusters_unilocal(clusters):
+def consolidate_clusters_unilocal(clusters, options, ref_genome=None):
     """Consolidate clusters to a list of (type, contig, mean start, mean end, cluster size, members) tuples."""
     consolidated_clusters = []
-    for index, cluster in enumerate(clusters):
-        sv_types = [member.signature for member in cluster]
-        members = [member.read for member in cluster]
-        if cluster[0].type == 'BND':
-            start = np.median([member.get_source()[1] for member in cluster])
-            dest_start = np.median([member.get_destination()[1] for member in cluster])
-            source_direction = max([member.source_direction for member in cluster], key=[member.source_direction for member in cluster].count)
-            dest_direction = max([member.dest_direction for member in cluster], key=[member.dest_direction for member in cluster].count)
-            consolidated_clusters.append(
-                    CandidateBreakend(cluster[0].get_source()[0], int(round(start)), source_direction, cluster[0].get_destination()[0], int(round(dest_start)), dest_direction, members, sv_types))
-        else:
-            start = np.median([member.get_source()[1] for member in cluster])
-            end = np.median([member.get_source()[2] - member.get_source()[1] for member in cluster]) + start
-            consolidated_clusters.append(
-                    Candidate(cluster[0].get_source()[0], int(round(start)), int(round(end)), sv_types, cluster[0].type, members))
+    chrom_results = dict()
+    for sig in clusters:
+        chrom_results.setdefault(sig[0].contig, []).append(sig)
+
+    for chrom in chrom_results:
+        ref_genome_seq = None if ref_genome is None else ref_genome.fetch(chrom)
+        ref_seq, alt_seq = None, None
+        for cluster in chrom_results[chrom]:
+            sv_type = cluster[0].type
+            sv_from = [member.signature for member in cluster]
+            members = [member.read for member in cluster]
+            if sv_type == 'BND':
+                start = round(np.median([member.get_source()[1] for member in cluster]))
+                dest_start = round(np.median([member.get_destination()[1] for member in cluster]))
+                source_direction = max([member.source_direction for member in cluster], key=[member.source_direction for member in cluster].count)
+                dest_direction = max([member.dest_direction for member in cluster], key=[member.dest_direction for member in cluster].count)
+                consolidated_clusters.append(
+                        CandidateBreakend(cluster[0].get_source()[0], start, source_direction, cluster[0].get_destination()[0], dest_start, dest_direction, members, sv_from))
+            else:
+                contig = cluster[0].get_source()[0]
+                start = round(np.median([member.get_source()[1] for member in cluster]))
+                end = round(np.median([member.get_source()[2] - member.get_source()[1] for member in cluster])) + start
+                svlen = end - start
+                if options.min_sv_size <= abs(svlen) <= options.max_sv_size:
+                    if sv_type == 'INS':
+                        alt_seq = cluster[0].alt_sequence
+                        if ref_genome:
+                            try:
+                                ref_seq = ref_genome_seq[max(start-1, 0)]
+                            except IndexError:
+                                ref_seq = 'N'
+                    elif sv_type == 'DEL':
+                        if ref_genome:
+                            ref_seq = ref_genome_seq[start-1:end]
+                            try:
+                                alt_seq = ref_genome_seq[max(start-1, 0)]
+                            except IndexError:
+                                alt_seq = 'N'
+                    else:
+                        pass
+                    consolidated_clusters.append(
+                            Candidate(contig, start, end, sv_from, sv_type, members, ref_seq=ref_seq, alt_seq=alt_seq))
 
     return consolidated_clusters
 

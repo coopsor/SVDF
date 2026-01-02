@@ -52,20 +52,7 @@ def filter_data(dataset):
     dataset = np.delete(dataset, drop_index, axis=0)
     return dataset
 
-
-# ont_50x = pd.read_csv('ont/intra_feature.txt', sep='\t', keep_default_na=False)
-# ont_20x = pd.read_csv('ont_20x/intra_feature.txt', sep='\t', keep_default_na=False)
-# ont_10x = pd.read_csv('ont_10x/intra_feature.txt', sep='\t', keep_default_na=False)
-# ont_5x = pd.read_csv('ont_5x/intra_feature.txt', sep='\t', keep_default_na=False)
-# ccs_30x = pd.read_csv('ccs/intra_feature.txt', sep='\t', keep_default_na=False)
-# ccs_10x = pd.read_csv('ccs_10x/intra_feature.txt', sep='\t', keep_default_na=False)
-# ccs_5x = pd.read_csv('ccs_5x/intra_feature.txt', sep='\t', keep_default_na=False)
-# clr_65x = pd.read_csv('clr/intra_feature.txt', sep='\t', keep_default_na=False)
-# clr_35x = pd.read_csv('clr_35x/intra_feature.txt', sep='\t', keep_default_na=False)
-# clr_20x = pd.read_csv('clr_20x/intra_feature.txt', sep='\t', keep_default_na=False)
-# clr_10x = pd.read_csv('clr_10x/intra_feature.txt', sep='\t', keep_default_na=False)
-# clr_5x = pd.read_csv('clr_5x/intra_feature.txt', sep='\t', keep_default_na=False)
-
+# Load signatures from pickle files of svdf test mode
 ont_signatures_50x = pickle.load(open('ont/signatures.pkl', 'rb'))[0]
 ont_signatures_20x = pickle.load(open('ont_20x/signatures.pkl', 'rb'))[0]
 ont_signatures_10x = pickle.load(open('ont_10x/signatures.pkl', 'rb'))[0]
@@ -125,7 +112,7 @@ def group_data(raw_data, temp):
 
         param = (abs(len(partition_sample) - mean_len)) / max(len(partition_sample), mean_len) + mean_len
         distance_data = []
-        for i in range(len(partition_sample) - 1):  # 局部深度反映了当前sv在1000bp以内的相似sv的个数
+        for i in range(len(partition_sample) - 1):
             for j in range(i + 1, len(partition_sample)):
                 distance_data.append(
                     span_position_distance(partition_sample[i], partition_sample[j], element_type, param))
@@ -142,7 +129,7 @@ def group_data(raw_data, temp):
 max_length = 100
 scaler = MinMaxScaler()
 
-def scaler_test_values(grouped_dataset, flag):
+def scaler_test_values(grouped_dataset):
     total_group = [list(j.data.values()) for i in grouped_dataset for j in i]
     X_max = np.max(total_group, axis=0)[:-1]
     X_min = np.min(total_group, axis=0)[:-1]
@@ -157,7 +144,7 @@ def scaler_test_values(grouped_dataset, flag):
         # label = [0 if i != 1 else 1 for i in label]
         label_y = (max(label, key=label.count))
         scaler_sublist = (sublist - X_min) / (X_max - X_min)
-        scaler_sublist = np.concatenate((scaler_sublist, np.tile(flag, (scaler_sublist.shape[0], 1))), axis=1)
+        # scaler_sublist = np.concatenate((scaler_sublist, np.tile(flag, (scaler_sublist.shape[0], 1))), axis=1)
         if len(sublist) <= max_length:
             scaler_dataset.append([scaler_sublist, (label_y, label)])
         elif len(sublist) > max_length:
@@ -169,7 +156,6 @@ def scaler_test_values(grouped_dataset, flag):
     return scaler_dataset
 
 def augument_data(train_X, train_Y):
-    # 数据增强
     augmented_data = []
     augmented_data_label = []
     for x, y in zip(train_X, train_Y):
@@ -186,9 +172,7 @@ def augument_data(train_X, train_Y):
                 augmented_data_label.append(y)
         augmented_data.append(x)
         augmented_data_label.append(y)
-    element_counts = Counter(augmented_data_label)
-    for element, count in element_counts.items():
-        print(f"数据增强后元素 {element} 出现了 {count} 次")
+
     return augmented_data, augmented_data_label
 
 train_grouped_dataset, test_dataset, test_grouped_dataset = [], [], []
@@ -210,92 +194,22 @@ for sub_signature in [clr_signatures_65x, clr_signatures_35x, clr_signatures_20x
         pickle.dump(sub_train_dataset, f)
 
 for temp in range(12):
-    if temp in [0, 1, 2, 3]:
-        flag = 0
-    elif temp in [4, 5, 6]:
-        flag = 1
-    elif temp in [7, 8, 9, 10, 11]:
-        flag = 2
-    plat = [0, 0, 0]
-    plat[flag] = 1
-    with open('HG002/train_data_{}.pkl'.format(temp), 'rb') as f:
+    with open('/home/user/code/SVdetect/svim/HG002/train_data_{}.pkl'.format(temp), 'rb') as f:
         sub_train_dataset = pickle.load(f)
     del_sig = [i for i in sub_train_dataset if i.type == 'DEL']
     ins_sig = [i for i in sub_train_dataset if i.type == 'INS']
     sub_train_grouped = group_data(del_sig, temp)
     sub_ins_grouped = group_data(ins_sig, temp)
     sub_train_grouped.extend(sub_ins_grouped)
-    scaler_train_data = scaler_test_values(sub_train_grouped, plat)
+    scaler_train_data = scaler_test_values(sub_train_grouped)
     train_X = [i[0] for i in scaler_train_data]
     label_list = [i[1] for i in scaler_train_data]
     train_Y = [i[0] for i in label_list]
     element_counts = Counter(train_Y)
-    for element, count in element_counts.items():
-        print(f"元素 {element} 出现了 {count} 次")
-    train_X, train_Y = augument_data(train_X, train_Y)
+
     train_data.extend(train_X)
     train_label.extend(train_Y)
     temp += 1
 
-element_counts = Counter(train_label)
-for element, count in element_counts.items():
-    print(f"元素 {element} 出现了 {count} 次")
 with open('HG002/train_filter_aug.pkl', 'wb') as f:
     pickle.dump([train_data, train_label], f)
-
-# lengths = [[len(sublist), label] for sublist, label in zip(train_feature, train_y)]
-# lengths.sort(reverse=True)
-# import matplotlib.pyplot as plt
-#
-# values_0 = [item[0] for item in lengths if item[1] == 0]
-# values_1 = [item[0] for item in lengths if item[1] == 1]
-#
-# hist_0, bins_0 = np.histogram(values_0, bins=np.unique(values_0))
-# hist_1, bins_1 = np.histogram(values_1, bins=np.unique(values_1))
-#
-# plt.bar(bins_0[:-1], hist_0, width=0.5, align='center', color='blue', alpha=0.7, label='Label 0')
-# for value, freq in zip(bins_0[:-1], hist_0):
-#     plt.text(value, freq, f'({value},{freq})', ha='center', va='bottom')
-# plt.show()
-# plt.bar(bins_1[:-1], hist_1, width=0.5, align='center', color='green', alpha=0.7, label='Label 1')
-#
-# for value, freq in zip(bins_1[:-1], hist_1):
-#     plt.text(value, freq, f'({value},{freq})', ha='center', va='bottom')
-# plt.show()
-# #
-
-# data_see = []
-# data_around = []
-# i = 0
-# for sublist, label in zip(train_feature, train_y):
-#     if i - 2 > 0 and i + 2 < len(train_feature) and label == 1:
-#         if len(sublist) == 1 or len(sublist) == 2:
-#             data_see.append([sub_sublist[5] for sub_sublist in sublist])
-#             data_around.append([sub_sublist for sub_sublist in train_feature[i-2:i+2]])
-#     i = i+1
-
-
-# train_X, train_Y = augument_data()
-# train_feature, val_feature, train_label, val_label = train_test_split(train_X, train_Y, test_size=0.1, random_state=42)
-
-
-# lengths = [[len(sublist), label] for sublist, label in zip(train_feature, train_y)]
-# lengths.sort(reverse=True)
-#
-# import matplotlib.pyplot as plt
-#
-# values_0 = [item[0] for item in lengths if item[1] == 0]
-# values_1 = [item[0] for item in lengths if item[1] == 1]
-#
-# hist_0, bins_0 = np.histogram(values_0, bins=np.unique(values_0))
-# hist_1, bins_1 = np.histogram(values_1, bins=np.unique(values_1))
-#
-# plt.bar(bins_0[:-1], hist_0, width=0.5, align='center', color='blue', alpha=0.7, label='Label 0')
-# for value, freq in zip(bins_0[:-1], hist_0):
-#     plt.text(value, freq, f'({value},{freq})', ha='center', va='bottom')
-# plt.show()
-# plt.bar(bins_1[:-1], hist_1, width=0.5, align='center', color='green', alpha=0.7, label='Label 1')
-#
-# for value, freq in zip(bins_1[:-1], hist_1):
-#     plt.text(value, freq, f'({value},{freq})', ha='center', va='bottom')
-# plt.show()

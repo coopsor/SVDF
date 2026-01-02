@@ -1,6 +1,8 @@
 from __future__ import print_function
 
 import pickle
+import warnings
+warnings.filterwarnings("ignore")
 
 from SVSignature import SignatureDeletion, SignatureInsertion, SignatureInversion, SignatureDuplicationTandem, SignatureTranslocation
 
@@ -53,7 +55,7 @@ def feature_record(alignment_current, alignment_next, ins_tra_flag=False, mode='
             'D': alignment_current['ref_start'],
             'E': alignment_current['ref_end'],
             'soft_clipped_length': soft_clipped_length,
-            'NM': alignment_current['NM'] if alignment_current['NM'] else 0,
+            'NM': alignment_current['NM'],
             'a_freq': a_freq,
             't_freq': t_freq,
             'g_freq': g_freq,
@@ -77,7 +79,10 @@ def feature_read_segement(primary, supplementaries, mode = 'general'):
         else:
             q_start = alignment.query_alignment_start
             q_end = alignment.query_alignment_end
-
+        if alignment.has_tag('NM'):
+            nm = alignment.get_tag('NM')
+        else:
+            nm = 0
         new_alignment_dict = {'read_name': read_name,
                               'q_start': q_start,
                               'q_end': q_end,
@@ -89,7 +94,7 @@ def feature_read_segement(primary, supplementaries, mode = 'general'):
                               'cigar_tuple': alignment.cigartuples,
                               'FLAG': alignment.flag,
                               'infer_read_length': alignment.infer_read_length(),
-                              'NM': alignment.get_tag('NM'),
+                              'NM': nm,
                               'bin': alignment.bin,
                               'atgc_seq': alignment.query_sequence,
                               }
@@ -126,7 +131,9 @@ def analyze_read_segments(bam, segement_data, options, mode = 'general'):
                 end = start + deviation
                 if end - start < options.min_sv_size:
                     continue
-                sv_sig = (ref_chr, start, end, "suppl", read_name)
+                insertion_seq = alignment_current['atgc_seq'][
+                                alignment_current['q_end']:alignment_current['q_end'] + deviation]
+                sv_sig = (ref_chr, start, end, "suppl", read_name, insertion_seq)
                 sv_signatures.append(SignatureInsertion(*sv_sig))
             elif pred_type == 0:  # DEL
                 if not alignment_current['is_reverse']:
@@ -139,7 +146,7 @@ def analyze_read_segments(bam, segement_data, options, mode = 'general'):
                 sv_sig = (ref_chr, start, end, "suppl", read_name)
                 sv_signatures.append(SignatureDeletion(*sv_sig))
             elif pred_type == 2:
-                # if distance_on_reference <= -options.min_sv_size:  # DUP: 重复区域的长度大于阈值且大于sv最小值
+                # if distance_on_reference <= -options.min_sv_size:  # DUP
                 if not alignment_current['is_reverse']:
                     start = alignment_next['ref_start']
                     end = alignment_current['ref_end']
@@ -244,7 +251,9 @@ def analyze_read_segments(bam, segement_data, options, mode = 'general'):
                             end = start + deviation
                             if end - start < options.min_sv_size:
                                 continue
-                            sv_sig = (ref_chr, start, end, "suppl", read_name)
+                            insertion_seq = alignment_current['atgc_seq'][
+                                            alignment_current['q_end']:alignment_current['q_end'] + deviation]
+                            sv_sig = (ref_chr, start, end, "suppl", read_name, insertion_seq)
                             sv_signatures.append(SignatureInsertion(*sv_sig))
                         elif deviation < 0:  # DEL
                             if not alignment_current['is_reverse']:

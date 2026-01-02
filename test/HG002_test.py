@@ -3,12 +3,12 @@ import re
 
 
 def main(read_type, bam_file, working_file, support):
-    os.system(
-        "/home/user/miniconda3/envs/tf-2/bin/python svdf.py test --read_type {0}  -s {1}  {2}  {3} ../data/hs37d5.fa".format(
-            read_type, support, working_file, bam_file))
-    os.system("cat {0}/variants.vcf > {0}/{0}.vcf".format(working_file))
-    os.system("grep \'#\' {0}/variants.vcf >{0}/{0}_gt.vcf".format(working_file))
-    os.system("grep -v \'#\' {0}/variants.vcf | grep -v '0/0\|\./\.' >> {0}/{0}_gt.vcf".format(working_file))
+    # os.system(
+    #     "/home/user/miniconda3/envs/tf-2/bin/python svdf.py test --read_type {0}  -s {1}  {2}  {3} ../data/hs37d5.fa".format(
+    #         read_type, support, working_file, bam_file))
+    # os.system("cat {0}/variants.vcf > {0}/{0}.vcf".format(working_file))
+    # os.system("grep \'#\' {0}/variants.vcf >{0}/{0}_gt.vcf".format(working_file))
+    # os.system("grep -v \'#\' {0}/variants.vcf | grep -v '0/0\|\./\.' >> {0}/{0}_gt.vcf".format(working_file))
 
     # os.system("svim alignment tools/svim {0} /data/huheng/dataset/human/HG002_PacBio_CCS_15kb/ref/hs37d5.fa --min_sv_size 30 ".format(bam_file))
     #     # os.system("cat tools/svim/variants.vcf >tools/svim/{0}_variants.vcf".format(file_type))
@@ -34,9 +34,9 @@ def main(read_type, bam_file, working_file, support):
     #
 
     def get_f1(svtype):
-        os.system(
-            "grep -E \'#|SVTYPE=INS|SVTYPE=DEL\' {1}/{1}_gt.vcf > variants.vcf".format(svtype.upper(), working_file))
-        # os.system("grep -E \'#|SVTYPE={0}\' {1}/{1}.vcf > variants.vcf".format(svtype.upper(), working_file))
+        # os.system(
+        #     "grep -E \'#|SVTYPE=INS|SVTYPE=DEL\' {1}/{1}_gt.vcf > variants.vcf".format(svtype.upper(), working_file))
+        os.system("grep -E \'#|SVTYPE={0}\' {1}/{1}.vcf > variants.vcf".format(svtype.upper(), working_file))
         os.system("/home/user/miniconda3/envs/tf-2/bin/bgzip variants.vcf")
         os.system("/home/user/miniconda3/envs/tf-2/bin/tabix variants.vcf.gz")
         print('genotype')

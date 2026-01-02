@@ -39,7 +39,7 @@ def cal_GL(c0, c1, type, platform, min_support):
     if platform == "ONT":
         err = 0.2 if type == "INS" else 0.1
     elif platform == "CCS":
-        err = 0.1 if type == "INS" else 0.05
+        err = 0.05 if type == "INS" else 0.05
     else:
         err = 0.2 if type == "INS" and min_support<=2 else 0.05
     # Approximate adjustment of events with larger read depth
